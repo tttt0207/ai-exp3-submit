@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI通识课 实验三 提交页面（增强版）</title>
+  <title>AI通识课 实验三 提交页面（最终版）</title>
   <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
   <style>
     body { font-family: Arial, "Microsoft YaHei", sans-serif; max-width: 660px; margin: 40px auto; padding: 20px; line-height: 1.6; background: #f9f9f9; }
@@ -19,7 +19,7 @@
   </style>
 </head>
 <body>
-  <h1>AI通识课 实验三 提交页面（增强版）</h1>
+  <h1>AI通识课 实验三 提交页面</h1>
   
   <div class="form-group">
     <label for="studentName">姓名 <span style="color:#e74c3c">*</span></label>
@@ -34,16 +34,16 @@
   </div>
 
   <div class="form-group">
-    <label for="email">邮箱 <span style="color:#e74c3c">*</span></label>
-    <input type="email" id="email" placeholder="例：2021001234@stu.example.edu.cn">
+    <label for="email">联系邮箱 <span style="color:#e74c3c">*</span></label>
+    <input type="email" id="email" placeholder="任意邮箱均可，例如 xxx@qq.com">
     <div id="emailError" class="error"></div>
-    <div class="info">必须使用学校邮箱</div>
+    <div class="info">支持 QQ、163、Gmail、Outlook 等所有常见邮箱</div>
   </div>
 
   <div class="form-group">
     <label for="file">实验报告上传 <span style="color:#e74c3c">*</span></label>
     <input type="file" id="file" accept=".docx">
-    <div class="info">文件必须命名为：学号_exp3.docx，且不超过 3MB</div>
+    <div class="info">必须命名为：学号_exp3.docx（例如 202100123456_exp3.docx），不超过 3MB</div>
     <div id="fileError" class="error"></div>
   </div>
 
@@ -60,9 +60,9 @@
     let currentStudentId = '';
     let fileContentId = '';
 
-    // 1. 姓名校验
-    nameInput.addEventListener('input', function() {
-      const val = this.value.trim();
+    // 1. 姓名
+    nameInput.addEventListener('input', () => {
+      const val = nameInput.value.trim();
       const cn = [...val].filter(c => /[\u4e00-\u9fa5]/.test(c)).length;
       const en = val.replace(/[\u4e00-\u9fa5]/g,'').length;
       if ((cn >= 2 && cn <= 5) || (en >= 2 && en <= 20 && /^[a-zA-Z\s]+$/.test(val))) {
@@ -75,9 +75,9 @@
       checkAll();
     });
 
-    // 2. 学号校验
-    idInput.addEventListener('input', function() {
-      const val = this.value.trim();
+    // 2. 学号
+    idInput.addEventListener('input', () => {
+      const val = idInput.value.trim();
       if (/^\d{8,12}$/.test(val)) {
         document.getElementById('idError').textContent = '';
         currentStudentId = val;
@@ -90,23 +90,22 @@
       checkAll();
     });
 
-    // 3. 邮箱校验（请修改成你们学校的域名！）
-    emailInput.addEventListener('input', function() {
-      const val = this.value.trim();
-      // 下面的正则改成你们学校的邮箱后缀（支持常见学校邮箱）
-      const schoolMail = /@(stu\.[a-zA-Z0-9-]+\.edu\.cn|mail\.[a-zA-Z0-9-]+\.edu\.cn|[a-zA-Z0-9-]+\.edu\.cn)$/;
-      if (schoolMail.test(val) && val.length >= 12) {
+    // 3. 邮箱（改这里：任意合法邮箱都行）
+    emailInput.addEventListener('input', () => {
+      const val = emailInput.value.trim();
+      const commonPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+      if (commonPattern.test(val) && val.length >= 6) {
         document.getElementById('emailError').textContent = '';
         emailOk = true;
       } else {
-        document.getElementById('emailError').textContent = '请使用正确的学校邮箱';
+        document.getElementById('emailError').textContent = '请输入正确的邮箱地址';
         emailOk = false;
       }
       checkAll();
     });
 
-    // 4. 文件校验（保持原强大功能）
-    fileInput.addEventListener('change', function(e) {
+    // 4. 文件校验（完全不变）
+    fileInput.addEventListener('change', e => {
       const file = e.target.files[0];
       document.getElementById('fileError').textContent = '';
       resultDiv.innerHTML = '';
@@ -126,8 +125,8 @@
       }
 
       const reader = new FileReader();
-      reader.onload = function(e) {
-        mammoth.extractRawText({ arrayBuffer: e.target.result })
+      reader.onload = ev => {
+        mammoth.extractRawText({ arrayBuffer: ev.target.result })
           .then(res => {
             const text = res.value;
             const match = text.match(/\b\d{8,12}\b/);
@@ -143,15 +142,11 @@
 
     function checkAll() {
       if (nameOk && idOk && emailOk && fileInput.files[0] && currentStudentId === fileContentId) {
-        fileOk = true;
         resultDiv.innerHTML = '<div class="success">✓ 全部信息校验通过！可以提交</div>';
+      } else if (currentStudentId && fileContentId && currentStudentId !== fileContentId) {
+        resultDiv.innerHTML = `<div class="error">错误：文件内学号(${fileContentId}) 与输入学号不一致！</div>`;
       } else {
-        fileOk = false;
-        if (currentStudentId && fileContentId && currentStudentId !== fileContentId) {
-          resultDiv.innerHTML = `<div class="error">错误：文件内学号(${fileContentId}) 与输入学号不一致！</div>`;
-        } else {
-          resultDiv.innerHTML = '';
-        }
+        resultDiv.innerHTML = '';
       }
     }
   </script>
