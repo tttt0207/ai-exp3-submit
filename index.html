@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI通识课 实验三 提交页面（增强版）</title>
+  <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
+  <style>
+    body { font-family: Arial, "Microsoft YaHei", sans-serif; max-width: 660px; margin: 40px auto; padding: 20px; line-height: 1.6; background: #f9f9f9; }
+    h1 { text-align: center; color: #2c3e50; }
+    .form-group { margin: 22px 0; background: white; padding: 18px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+    label { display: block; margin-bottom: 8px; font-weight: bold; color: #34495e; }
+    input[type="text"], input[type="email"], input[type="file"] { 
+      width: 100%; padding: 12px; font-size: 16px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box;
+    }
+    .error { color: #e74c3c; font-size: 14px; margin-top: 6px; }
+    .success { color: #27ae60; background: #d5f4e6; padding: 15px; border-radius: 8px; font-size: 18px; text-align: center; font-weight: bold; }
+    .info { color: #7f8c8d; font-size: 13px; margin-top: 5px; }
+  </style>
+</head>
+<body>
+  <h1>AI通识课 实验三 提交页面（增强版）</h1>
+  
+  <div class="form-group">
+    <label for="studentName">姓名 <span style="color:#e74c3c">*</span></label>
+    <input type="text" id="studentName" placeholder="请输入真实姓名（2-10位）">
+    <div id="nameError" class="error"></div>
+  </div>
+
+  <div class="form-group">
+    <label for="studentId">学号 <span style="color:#e74c3c">*</span></label>
+    <input type="text" id="studentId" placeholder="8-12位纯数字" maxlength="12">
+    <div id="idError" class="error"></div>
+  </div>
+
+  <div class="form-group">
+    <label for="email">邮箱 <span style="color:#e74c3c">*</span></label>
+    <input type="email" id="email" placeholder="例：2021001234@stu.example.edu.cn">
+    <div id="emailError" class="error"></div>
+    <div class="info">必须使用学校邮箱</div>
+  </div>
+
+  <div class="form-group">
+    <label for="file">实验报告上传 <span style="color:#e74c3c">*</span></label>
+    <input type="file" id="file" accept=".docx">
+    <div class="info">文件必须命名为：学号_exp3.docx，且不超过 3MB</div>
+    <div id="fileError" class="error"></div>
+  </div>
+
+  <div id="result"></div>
+
+  <script>
+    const nameInput   = document.getElementById('studentName');
+    const idInput     = document.getElementById('studentId');
+    const emailInput  = document.getElementById('email');
+    const fileInput   = document.getElementById('file');
+    const resultDiv   = document.getElementById('result');
+
+    let nameOk = false, idOk = false, emailOk = false, fileOk = false;
+    let currentStudentId = '';
+    let fileContentId = '';
+
+    // 1. 姓名校验
+    nameInput.addEventListener('input', function() {
+      const val = this.value.trim();
+      const cn = [...val].filter(c => /[\u4e00-\u9fa5]/.test(c)).length;
+      const en = val.replace(/[\u4e00-\u9fa5]/g,'').length;
+      if ((cn >= 2 && cn <= 5) || (en >= 2 && en <= 20 && /^[a-zA-Z\s]+$/.test(val))) {
+        document.getElementById('nameError').textContent = '';
+        nameOk = true;
+      } else {
+        document.getElementById('nameError').textContent = '姓名2-10位，支持中英文';
+        nameOk = false;
+      }
+      checkAll();
+    });
+
+    // 2. 学号校验
+    idInput.addEventListener('input', function() {
+      const val = this.value.trim();
+      if (/^\d{8,12}$/.test(val)) {
+        document.getElementById('idError').textContent = '';
+        currentStudentId = val;
+        idOk = true;
+      } else {
+        document.getElementById('idError').textContent = '学号必须是8-12位纯数字';
+        currentStudentId = '';
+        idOk = false;
+      }
+      checkAll();
+    });
+
+    // 3. 邮箱校验（请修改成你们学校的域名！）
+    emailInput.addEventListener('input', function() {
+      const val = this.value.trim();
+      // 下面的正则改成你们学校的邮箱后缀（支持常见学校邮箱）
+      const schoolMail = /@(stu\.[a-zA-Z0-9-]+\.edu\.cn|mail\.[a-zA-Z0-9-]+\.edu\.cn|[a-zA-Z0-9-]+\.edu\.cn)$/;
+      if (schoolMail.test(val) && val.length >= 12) {
+        document.getElementById('emailError').textContent = '';
+        emailOk = true;
+      } else {
+        document.getElementById('emailError').textContent = '请使用正确的学校邮箱';
+        emailOk = false;
+      }
+      checkAll();
+    });
+
+    // 4. 文件校验（保持原强大功能）
+    fileInput.addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      document.getElementById('fileError').textContent = '';
+      resultDiv.innerHTML = '';
+      fileOk = false;
+
+      if (!file) return;
+
+      if (file.size > 3 * 1024 * 1024) {
+        document.getElementById('fileError').textContent = '文件不能超过 3MB';
+        return;
+      }
+
+      const expectedName = `${currentStudentId}_exp3.docx`;
+      if (file.name !== expectedName) {
+        document.getElementById('fileError').textContent = `文件名必须为：${expectedName}`;
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        mammoth.extractRawText({ arrayBuffer: e.target.result })
+          .then(res => {
+            const text = res.value;
+            const match = text.match(/\b\d{8,12}\b/);
+            fileContentId = match ? match[0] : '';
+            checkAll();
+          })
+          .catch(() => {
+            document.getElementById('fileError').textContent = '读取docx失败';
+          });
+      };
+      reader.readAsArrayBuffer(file);
+    });
+
+    function checkAll() {
+      if (nameOk && idOk && emailOk && fileInput.files[0] && currentStudentId === fileContentId) {
+        fileOk = true;
+        resultDiv.innerHTML = '<div class="success">✓ 全部信息校验通过！可以提交</div>';
+      } else {
+        fileOk = false;
+        if (currentStudentId && fileContentId && currentStudentId !== fileContentId) {
+          resultDiv.innerHTML = `<div class="error">错误：文件内学号(${fileContentId}) 与输入学号不一致！</div>`;
+        } else {
+          resultDiv.innerHTML = '';
+        }
+      }
+    }
+  </script>
+</body>
+</html>
